@@ -28,9 +28,10 @@ table_id = project_id + "." + dataset + "." + table
 hostname = socket.gethostname()
 os_ver = platform.platform()
 
+# Job started & update BQ
 insert = f"""
     INSERT INTO
-    `{table_id}` (job_name, 
+    `{table_id}` (job_name,
         hostname, os_version, status)
     VALUES
     ('{jobname}', '{hostname}', '{os_ver}', '{wip}')
@@ -39,34 +40,6 @@ insert = f"""
 bq = bigquery.Client()
 
 bq.query(insert)
-
-# du-hast-mich.windev.patchdata
-
-"""
-    #"job_name": os.getenv('JOB_NAME'),
-    #"instance_name": os.getenv('INST_NAME'),
-d = {
-    "job_name": jobname,
-    "hostname": socket.gethostname(),
-    "os_version": platform.platform(),
-    "status": wip,
-    "result": result,
-    "message": message
-}
-
-print("json data: %s" % (json.dumps(d)))
-
-rows_to_insert = [
-    d,
-]
-
-# app_test.job_result
-r = bq.insert_rows_json(os.getenv('TABLE_ID', rows_to_insert))
-if r == []:
-    print("job done")
-else:
-    print("errors: {}".format(r))
-"""
 
 # patch
 t = subprocess.run(["py", "exe.py"], capture_output=True)
@@ -77,6 +50,7 @@ message = f"""stdout: '{out}' stderr: '{err}'""".format(out, err).replace('\r\n'
 
 result = str(t.returncode)
 
+# update job status in BQ
 update = f"""
     UPDATE
     `{table_id}`
