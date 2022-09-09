@@ -87,7 +87,7 @@ gcs = storage.Client()
 fd_bucketname = open('./bucketname', 'r')
 bucketname = fd_bucketname.readline().strip()
 bucket = gcs.bucket(bucketname)
-blob = bucket.blob(jobname + "/" + hostname + "." + time.time() + ".log")
+blob = bucket.blob(jobname + "/" + hostname + "." + str(time.time()) + ".log")
 blob.upload_from_filename(exe_log_path)
 
 logging.info("test.py done")
