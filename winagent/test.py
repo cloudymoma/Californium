@@ -12,16 +12,13 @@ import time
 from google.cloud import bigquery
 from google.cloud import storage
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./windev.json"
 
 # init logger
 logging.basicConfig(
+    filename='C:/python_script_log.log',
     level=logging.DEBUG,
     format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
-    handlers=[
-        logging.FileHandler("testpy_debug.log"),
-        logging.StreamHandler(sys.stdout)
-    ]
+    datefmt='%H:%M:%S'
 )
 
 logging.info("test.py started")
@@ -30,20 +27,24 @@ logging.info("test.py started")
 wip = "Work in Progress"
 done = "Completed"
 
+logging.info("read configration")
 # get configurations
 fd_conf = open('./conf', 'r')
 project_id = fd_conf.readline().strip()
 jobname = fd_conf.readline().strip()
 cmd_exe = fd_conf.readline.strip()
 exe_log_path = fd_conf.readline.strip()
+fd_bucketname = open('./bucketname', 'r')
+bucketname = fd_bucketname.readline().strip()
 
-dataset = "windev"
-table = "patchdata"
+dataset = "game_test"
+table = "job_result"
 table_id = project_id + "." + dataset + "." + table
 
 hostname = socket.gethostname()
 os_ver = platform.platform()
 
+logging.info("Job started & update BQ")
 # Job started & update BQ
 insert = f"""
     INSERT INTO
@@ -57,20 +58,21 @@ bq = bigquery.Client()
 
 bq.query(insert)
 
+logging.info("BQ updated")
+
 # patch
+logging.info("Application Set Up")
 # t = subprocess.run(["py", "exe.py"], capture_output=True)
 t = subprocess.run(cmd_exe, capture_output=True)
-out = t.stdout.decode("utf-8")
-err = t.stderr.decode("utf-8")
+result_code = str(t.returncode)
 
-message = f"""stdout: '{out}' stderr: '{err}'""".format(out, err).replace('\r\n', ' ').replace('\n', ' ')
+if result_code==0:
+    result = "success"
+elif:
+    result = "fail"
 
-result = str(t.returncode)
-
-logging.debug("====== message ======")
-logging.debug(message)
-logging.debug("====== message end ======")
-
+message = "Please find log at f'gs://{bucketname}/{exe_log_path}'.format(bucketname=bucketname,exe_log_path=exe_log_path)
+    
 # update job status in BQ
 update = f"""
     UPDATE
@@ -84,8 +86,6 @@ bq.query(update)
 
 # upload log file to GCS
 gcs = storage.Client()
-fd_bucketname = open('./bucketname', 'r')
-bucketname = fd_bucketname.readline().strip()
 bucket = gcs.bucket(bucketname)
 blob = bucket.blob(jobname + "/" + hostname + "." + str(time.time()) + ".log")
 blob.upload_from_filename(exe_log_path)
