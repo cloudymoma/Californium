@@ -12,6 +12,7 @@ import time
 from google.cloud import bigquery
 from google.cloud import storage
 
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./windev.json"
 
 # init logger
 logging.basicConfig(
@@ -32,8 +33,8 @@ logging.info("read configration")
 fd_conf = open('./conf', 'r')
 project_id = fd_conf.readline().strip()
 jobname = fd_conf.readline().strip()
-cmd_exe = fd_conf.readline.strip()
-exe_log_path = fd_conf.readline.strip()
+cmd_exe = fd_conf.readline().strip()
+exe_log_path = fd_conf.readline().strip()
 fd_bucketname = open('./bucketname', 'r')
 bucketname = fd_bucketname.readline().strip()
 
@@ -68,10 +69,10 @@ result_code = str(t.returncode)
 
 if result_code==0:
     result = "success"
-elif:
+else:
     result = "fail"
 
-message = "Please find log at f'gs://{bucketname}/{exe_log_path}'.format(bucketname=bucketname,exe_log_path=exe_log_path)
+message = exe_log_path 
     
 # update job status in BQ
 update = f"""
