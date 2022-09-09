@@ -21,6 +21,8 @@ done = "Completed"
 fd_conf = open('./conf', 'r')
 project_id = fd_conf.readline().strip()
 jobname = fd_conf.readline().strip()
+cmd_exe = fd_conf.readline.strip()
+
 dataset = "windev"
 table = "patchdata"
 table_id = project_id + "." + dataset + "." + table
@@ -42,7 +44,8 @@ bq = bigquery.Client()
 bq.query(insert)
 
 # patch
-t = subprocess.run(["py", "exe.py"], capture_output=True)
+# t = subprocess.run(["py", "exe.py"], capture_output=True)
+t = subprocess.run(cmd_exe, capture_output=True)
 out = t.stdout.decode("utf-8")
 err = t.stderr.decode("utf-8")
 
