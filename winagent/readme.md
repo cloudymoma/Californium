@@ -11,6 +11,7 @@ bucketname
 ```shell
 project_id
 job_name
+command_to_execute
 ```
 
 ### GCP Service Account
