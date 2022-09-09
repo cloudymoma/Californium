@@ -12,6 +12,7 @@ bucketname
 project_id
 job_name
 command_to_execute
+out_log_path
 ```
 
 ### GCP Service Account

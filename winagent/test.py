@@ -7,8 +7,10 @@ import json
 import platform
 import socket
 import logging
+import time
 
 from google.cloud import bigquery
+from google.cloud import storage
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./windev.json"
 
@@ -33,6 +35,7 @@ fd_conf = open('./conf', 'r')
 project_id = fd_conf.readline().strip()
 jobname = fd_conf.readline().strip()
 cmd_exe = fd_conf.readline.strip()
+exe_log_path = fd_conf.readline.strip()
 
 dataset = "windev"
 table = "patchdata"
@@ -78,5 +81,13 @@ update = f"""
 """.format(table_id, done, result, message, jobname, hostname)
 
 bq.query(update)
+
+# upload log file to GCS
+gcs = storage.Client()
+fd_bucketname = open('./bucketname', 'r')
+bucketname = fd_bucketname.readline().strip()
+bucket = gcs.bucket(bucketname)
+blob = bucket.blob(jobname + "/" + hostname + "." + time.time() + ".log")
+blob.upload_from_filename(exe_log_path)
 
 logging.info("test.py done")
