@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 import os
 import subprocess
@@ -12,12 +11,10 @@ import time
 from google.cloud import bigquery
 from google.cloud import storage
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./windev.json"
 
 # init logger
 logging.basicConfig(
     filename='C:/python_script_log.log',
-    level=logging.DEBUG,
     format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
     datefmt='%H:%M:%S'
 )
@@ -65,16 +62,18 @@ logging.info("BQ updated")
 logging.info("Application Set Up")
 # t = subprocess.run(["py", "exe.py"], capture_output=True)
 t = subprocess.run(cmd_exe, capture_output=True)
-result_code = str(t.returncode)
+result_code = t.returncode
 
-if result_code==0:
+if result_code == 0:
     result = "success"
 else:
     result = "fail"
 
-message = exe_log_path 
-    
+message = jobname + "/" + hostname + "." + str(time.time()) + ".log" 
+
+logging.info("Updating BQ")
 # update job status in BQ
+
 update = f"""
     UPDATE
     `{table_id}`
@@ -82,6 +81,16 @@ update = f"""
     where
     job_name='{jobname}' AND hostname='{hostname}'
 """.format(table_id, done, result, message, jobname, hostname)
+
+update = f"""UPDATE
+  `{table_id}`
+SET
+  status='{done}',
+  result='{result}',
+  message='{message}'
+WHERE
+  job_name='{jobname}'
+  AND hostname='{hostname}'""".format(table_id, done, result, message, jobname, hostname)
 
 bq.query(update)
 
@@ -91,4 +100,4 @@ bucket = gcs.bucket(bucketname)
 blob = bucket.blob(jobname + "/" + hostname + "." + str(time.time()) + ".log")
 blob.upload_from_filename(exe_log_path)
 
-logging.info("test.py done")
+logging.info("qtest.py done")
