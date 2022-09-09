@@ -1,7 +1,7 @@
 set /p bucketname=<C:\bucketname
 
 echo "Downloading files from gcs" > C:\inst-batlog
-call gsutil -m cp gs://%bucketname%/python-3.10.6-amd64.exe gs://%bucketname%/test.py gs://%bucketname%/windev.json gs://%bucketname%/exe.py .
+call gsutil -m cp gs://%bucketname%/winagent/python-3.10.6-amd64.exe gs://%bucketname%/winagent/conf gs://%bucketname%/winagent/test.py .
 
 echo "Installing Python 3.10.6" >> C:\inst-batlog
 python-3.10.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
