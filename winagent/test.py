@@ -6,12 +6,23 @@ import subprocess
 import json
 import platform
 import socket
+import logging
 
 from google.cloud import bigquery
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "./windev.json"
 
-print("test.py started")
+# init logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler("testpy_debug.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logging.info("test.py started")
 
 # define job status
 wip = "Work in Progress"
@@ -53,6 +64,10 @@ message = f"""stdout: '{out}' stderr: '{err}'""".format(out, err).replace('\r\n'
 
 result = str(t.returncode)
 
+logging.debug("====== message ======")
+logging.debug(message)
+logging.debug("====== message end ======")
+
 # update job status in BQ
 update = f"""
     UPDATE
@@ -64,4 +79,4 @@ update = f"""
 
 bq.query(update)
 
-print("test.py done")
+logging.info("test.py done")
