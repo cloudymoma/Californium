@@ -1,8 +1,9 @@
 set /p bucketname=<C:\bucketname
 
 echo "Downloading files from gcs" > C:\inst-batlog
-call gsutil -m cp gs://%bucketname%/python-3.10.6-amd64.exe gs://%bucketname%/conf gs://%bucketname%/test.py .
+call gsutil -m cp -r gs://%bucketname%/ C:\
 
+cd C:\%bucketname%
 echo "Installing Python 3.10.6" >> C:\inst-batlog
 python-3.10.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 echo "Successfully installed python" >> C:\inst-batlog
