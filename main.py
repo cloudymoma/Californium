@@ -20,17 +20,17 @@ from google.cloud import bigquery
 
 
 image_list_origin = {
-    "win7": "windows-cloud/windows-server-2016-dc-v20220812",
-    "win8": "windows-cloud/windows-server-2016-dc-v20220812",
-    "win10": "windows-cloud/windows-server-2016-dc-v20220812",
-    "win11": "windows-cloud/windows-server-2016-dc-v20220812"
+    "win7": "windows-cloud/windows-server-2016-dc-v20220902",
+    "win8": "windows-cloud/windows-server-2012-r2-dc-v20220902",
+    "win10": "windows-cloud/windows-server-2016-dc-v20220902",
+    "win11": "windows-cloud/windows-server-2016-dc-v20220902"
 }
 
 def job_status_init(job_name):
     client = bigquery.Client()
     insert = f"""
         INSERT INTO
-        `game_test.job-status` (job_name,
+        `game_test.job_status` (job_name,
             job_status,
             message)
         VALUES
@@ -43,7 +43,7 @@ def job_stauts_update(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job-status`
+    `game_test.job_status`
     SET
     job_status="on progress", message="test job is on progress"
     WHERE
@@ -57,10 +57,24 @@ def job_status_check(job_name):
     SELECT
     *
     FROM
-    `game_test.job-status`
+    `game_test.job_status`
     WHERE
     job_name = '{job_name}'""".format(job_name=job_name)
     query_results = client.query(update)
+    query_records = [dict(row) for row in query_results]
+    final_results = json.dumps(str(query_records))
+    return final_results 
+
+def job_result_check(job_name):
+    client = bigquery.Client()
+    query = f"""
+    SELECT
+    *
+    FROM
+    `game_test.job_result`
+    WHERE
+    job_name='{job_name}'""".format(job_name=job_name)
+    query_results = client.query(query)
     query_records = [dict(row) for row in query_results]
     final_results = json.dumps(str(query_records))
     return final_results 
@@ -69,7 +83,7 @@ def job_status_delete(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job-status`
+    `game_test.job_status`
     SET
     job_status="deleted", message="test job has been deleted"
     WHERE
@@ -77,7 +91,7 @@ def job_status_delete(job_name):
     client.query(update)
     print("update job status")
 
-def instance_status_check(image_list):
+def instance_status_check(image_list, project_id, zone):
     instance_list = []
     for image_key in image_list:
         instance_list.append(image_key)
@@ -85,7 +99,7 @@ def instance_status_check(image_list):
     status_running = 0
     while (status_running < len(instance_list)):
         for instance in instance_list:
-            instance_obj = client.get(project='cliu201', zone='us-central1-a', instance=instance)
+            instance_obj = client.get(project=project_id, zone=zone, instance=instance)
             instance_status = instance_obj.status
             if instance_status == "RUNNING":
                 status_running += 1
@@ -99,12 +113,12 @@ def instance_status_check(image_list):
 def job_create(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://~/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
     localworkspace_setting = auto.LocalWorkspaceOptions(work_dir="./",secrets_provider="default" ,project_settings=project_setting, stack_settings=stack_setting)
-    stack_name = "prd"
+    stack_name = job_name
     stack = auto.create_or_select_stack(stack_name=stack_name,
                                     project_name=project_name,
                                     program=program,
@@ -126,12 +140,12 @@ def job_create(program, job_name, project_id, region, zone):
 def job_delete(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://~/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
     localworkspace_setting = auto.LocalWorkspaceOptions(work_dir="./",secrets_provider="default" ,project_settings=project_setting, stack_settings=stack_setting)
-    stack_name = "prd"
+    stack_name = job_name
     stack = auto.create_or_select_stack(stack_name=stack_name,
                                     project_name=project_name,
                                     program=program,
@@ -195,7 +209,6 @@ async def post_handle(req: job_conf):
         for image_key in image_list: 
             instance_dic = {}
             instance_dic[image_key] = compute.Instance(image_key,
-                name = image_key,
                 machine_type=instance_type,
                 zone=zone,
                 boot_disk=compute.InstanceBootDiskArgs(
@@ -204,9 +217,13 @@ async def post_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket} > C:\myconf".format(gcs_bucket=gcs_bucket),
-                    "windows-startup-script-url": f"gs://{gcs_bucket}".format(gcs_bucket=gcs_bucket),
+                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\\bucketname".format(gcs_bucket=gcs_bucket),
+                    "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
                 },
+                service_account=compute.InstanceServiceAccountArgs(
+                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
+                    scopes=["cloud-platform"],
+                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
@@ -214,7 +231,7 @@ async def post_handle(req: job_conf):
             pulumi.export(f'instance-{image_key}_status'.format(image_key),  instance_dic[image_key].current_status)
     job_status_init(job_name=job_name)
     job_create(program=gcp_resource, job_name=job_name, project_id=project_id, region=region, zone=zone)
-    instance_status_check(image_list=image_list_final)
+    instance_status_check(image_list=image_list_final, project_id=project_id, zone=zone)
     job_stauts_update(job_name=job_name)
 
 
@@ -240,7 +257,6 @@ async def delete_handle(req: job_conf):
         for image_key in image_list: 
             instance_dic = {}
             instance_dic[image_key] = compute.Instance(image_key,
-                name = image_key,
                 machine_type=instance_type,
                 zone=zone,
                 boot_disk=compute.InstanceBootDiskArgs(
@@ -249,9 +265,13 @@ async def delete_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket} > C:\myconf".format(gcs_bucket=gcs_bucket),
-                    "windows-startup-script-url": f"gs://{gcs_bucket}".format(gcs_bucket=gcs_bucket),
+                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\bucketname".format(gcs_bucket=gcs_bucket),
+                    "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
                 },
+                service_account=compute.InstanceServiceAccountArgs(
+                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
+                    scopes=["cloud-platform"],
+                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
@@ -260,3 +280,8 @@ async def delete_handle(req: job_conf):
     
     job_delete(program=gcp_resource, job_name=job_name, project_id=project_id, region=region, zone=zone)
     job_status_delete(job_name=job_name)
+
+@app.get("/jobresult/{job_name}")
+async def get_handle(job_name):
+    result = job_result_check(job_name=job_name)
+    return result
