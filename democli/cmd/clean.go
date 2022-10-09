@@ -34,14 +34,14 @@ to quickly create a Cobra application.`,
 		instanceName = viper.GetString("instancename")
 		bucketName = viper.GetString("bucketname")
 		datasetID = viper.GetString("datasetid")
-		tableID = viper.GetString("tableid")
+		// tableID = viper.GetString("tableid")
 
-		if projectID == "" || zone == "" || instanceName == "" || bucketName == "" || datasetID == "" || tableID == "" {
+		if projectID == "" || zone == "" || instanceName == "" || bucketName == "" || datasetID == "" {
 			fmt.Printf("Please give all the required parameter in configfile\n")
 			os.Exit(1)
 		}
 
-		fmt.Printf("Backend resource will be created in project %v", projectID)
+		fmt.Printf("Backend resource will be deleted in project %v\n", projectID)
 		err := deleteInstance(projectID, zone, instanceName)
 		if err != nil {
 			fmt.Printf("Unable to delete instance: %v\n", err)

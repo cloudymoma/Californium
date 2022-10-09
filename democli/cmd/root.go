@@ -13,6 +13,7 @@ import (
 )
 
 var cfgFile string
+var jobFile string
 
 var (
 	projectID    string
@@ -23,7 +24,9 @@ var (
 	networkName  string
 	bucketName   string
 	datasetID    string
-	tableID      string
+	serverIP     string
+	serverPort   string
+	// tableID      string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -64,11 +67,14 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&zone, "zone", "z", "", "config gce zone (available zone list https://cloud.google.com/compute/docs/regions-zones?hl=zh-cn#available)")
 	rootCmd.PersistentFlags().StringVarP(&instanceName, "instancename", "i", "", "config gce instance name")
 	rootCmd.PersistentFlags().StringVarP(&machineType, "machinetype", "m", "n1-standard-1", "config gce instance machine type (default is n1-standard-1, available machine type list https://cloud.google.com/compute/docs/general-purpose-machines)")
-	rootCmd.PersistentFlags().StringVarP(&sourceImage, "sourceimage", "s", "projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts", "config gce instance image (default is projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts)")
+	rootCmd.PersistentFlags().StringVarP(&sourceImage, "sourceimage", "s", "projects/debian-cloud/global/images/family/debian-11", "config gce instance image (default is projects/debian-cloud/global/images/family/debian-11)")
 	rootCmd.PersistentFlags().StringVarP(&networkName, "networkname", "n", "global/networks/default", "config gce network (default is global/networks/default)")
-	rootCmd.PersistentFlags().StringVarP(&instanceName, "bucketName", "b", "", "config gcs backetname")
-	rootCmd.PersistentFlags().StringVarP(&datasetID, "datasetid", "d", "", "config bigquery dataset name")
-	rootCmd.PersistentFlags().StringVarP(&tableID, "tableid", "t", "", "config bigquery table name")
+	rootCmd.PersistentFlags().StringVarP(&bucketName, "bucketName", "b", "gametest", "config gcs backetname")
+	rootCmd.PersistentFlags().StringVarP(&datasetID, "datasetid", "d", "gametest", "config bigquery dataset name")
+	rootCmd.PersistentFlags().StringVarP(&serverIP, "serverip", "a", "127.0.0.1", "config backend server ip address")
+	rootCmd.PersistentFlags().StringVarP(&serverPort, "serverport", "l", "3333", "config backend server listen port")
+	rootCmd.PersistentFlags().StringVarP(&jobFile, "jobconfig", "j", "job.json", "config job config file path")
+	// rootCmd.PersistentFlags().StringVarP(&tableID, "tableid", "t", "", "config bigquery table name")
 	viper.BindPFlag("projectid", rootCmd.PersistentFlags().Lookup("projectid"))
 	viper.BindPFlag("zone", rootCmd.PersistentFlags().Lookup("zone"))
 	viper.BindPFlag("instanceName", rootCmd.PersistentFlags().Lookup("instanceName"))
@@ -77,7 +83,7 @@ func init() {
 	viper.BindPFlag("networkname", rootCmd.PersistentFlags().Lookup("networkname"))
 	viper.BindPFlag("bucketName", rootCmd.PersistentFlags().Lookup("bucketName"))
 	viper.BindPFlag("datasetid", rootCmd.PersistentFlags().Lookup("datasetid"))
-	viper.BindPFlag("tableid", rootCmd.PersistentFlags().Lookup("tableid"))
+	// viper.BindPFlag("tableid", rootCmd.PersistentFlags().Lookup("tableid"))
 }
 
 func initConfig() {
@@ -99,6 +105,7 @@ func initConfig() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Please setup the configFile first")
+		os.Exit(1)
 	} else {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}

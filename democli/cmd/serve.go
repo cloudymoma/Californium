@@ -7,17 +7,31 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	compute "cloud.google.com/go/compute/apiv1"
+	resourcemanager "cloud.google.com/go/resourcemanager/apiv3"
 	"cloud.google.com/go/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	computepb "google.golang.org/genproto/googleapis/cloud/compute/v1"
+	resourcemanagerpb "google.golang.org/genproto/googleapis/cloud/resourcemanager/v3"
 	"google.golang.org/protobuf/proto"
 )
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -33,11 +47,11 @@ to quickly create a Cobra application.`,
 		projectID = viper.GetString("projectid")
 		zone = viper.GetString("zone")
 		instanceName = viper.GetString("instancename")
-		bucketName = viper.GetString("bucketname")
+		bucketName = projectID + "-" + viper.GetString("bucketname") + "-" + RandStringBytes(4)
 		datasetID = viper.GetString("datasetid")
-		tableID = viper.GetString("tableid")
+		// tableID = viper.GetString("tableid")
 
-		if projectID == "" || zone == "" || instanceName == "" || bucketName == "" || datasetID == "" || tableID == "" {
+		if projectID == "" || zone == "" || instanceName == "" || bucketName == "" {
 			fmt.Printf("Please give all the required parameter in configfile\n")
 			os.Exit(1)
 		}
@@ -58,9 +72,16 @@ to quickly create a Cobra application.`,
 			fmt.Printf("Unable to create dataset: %v\n", err)
 			os.Exit(1)
 		}
-		err = createTableExplicitSchema(projectID, datasetID, tableID)
+		err = createTableExplicitSchema(projectID, datasetID)
 		if err != nil {
 			fmt.Printf("Unable to create table: %v\n", err)
+			os.Exit(1)
+		}
+
+		viper.Set("bucketname", bucketName)
+		err = viper.WriteConfig()
+		if err != nil {
+			fmt.Printf("Unable to save config: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -90,11 +111,59 @@ func createInstance(projectID, zone, instanceName, machineType, sourceImage, net
 	// networkName := "global/networks/default"
 
 	ctx := context.Background()
+	projectsClient, err := resourcemanager.NewProjectsClient(ctx)
+	if err != nil {
+		return fmt.Errorf("NewProjectClient: %v", err)
+	}
+	defer projectsClient.Close()
+
+	projectreq := &resourcemanagerpb.GetProjectRequest{
+		// TODO: Fill request struct fields.
+		// See https://pkg.go.dev/google.golang.org/genproto/googleapis/cloud/resourcemanager/v3#GetProjectRequest.
+		Name: *proto.String("projects/" + projectID),
+	}
+	projectresp, err := projectsClient.GetProject(ctx, projectreq)
+	if err != nil {
+		// TODO: Handle error.
+		return fmt.Errorf("unable to get projectnumber: %v", err)
+	}
+	projectNum := strings.Split(projectresp.Name, "/")[1]
+	fmt.Printf("Project Number is %v\n", projectNum)
+
 	instancesClient, err := compute.NewInstancesRESTClient(ctx)
 	if err != nil {
 		return fmt.Errorf("NewInstancesRESTClient: %v", err)
 	}
 	defer instancesClient.Close()
+
+	script := `#! /bin/bash
+apt update
+apt install python3-pip -y
+curl -fsSL https://get.pulumi.com | sh
+cp -R .pulumi/bin/* /usr/local/bin/
+mkdir /home/pulumidemobackend
+cat <<EOF > requirements.txt
+fastapi==0.82.0
+google-api-core==2.10.0
+google-auth==2.11.0
+google-cloud-bigquery==3.3.2
+google-cloud-bigquery-storage==2.15.0
+google-cloud-compute==1.5.2
+google-cloud-core==2.3.2
+google-crc32c==1.5.0
+google-resumable-media==2.3.3
+googleapis-common-protos==1.56.4
+proto-plus==1.22.1
+protobuf==4.21.5
+pulumi==3.39.3
+pulumi-gcp==6.36.0
+pydantic==1.10.2
+typing==3.7.4.3
+typing-extensions==4.3.0
+uvicorn==0.13.3
+EOF
+pip3 install -r requirements.txt
+`
 
 	req := &computepb.InsertInstanceRequest{
 		Project: projectID,
@@ -116,6 +185,27 @@ func createInstance(projectID, zone, instanceName, machineType, sourceImage, net
 			NetworkInterfaces: []*computepb.NetworkInterface{
 				{
 					Name: proto.String(networkName),
+					AccessConfigs: []*computepb.AccessConfig{
+						{
+							NetworkTier: proto.String("PREMIUM"),
+						},
+					},
+				},
+			},
+			Metadata: &computepb.Metadata{
+				Items: []*computepb.Items{
+					{
+						Key:   proto.String("startup-script"),
+						Value: proto.String(script),
+					},
+				},
+			},
+			ServiceAccounts: []*computepb.ServiceAccount{
+				{
+					Email: proto.String(projectNum + "-compute@developer.gserviceaccount.com"),
+					Scopes: []string{
+						"https://www.googleapis.com/auth/cloud-platform",
+					},
 				},
 			},
 		},
@@ -183,7 +273,7 @@ func createDataset(projectID, datasetID string) error {
 }
 
 // createTableExplicitSchema demonstrates creating a new BigQuery table and specifying a schema.
-func createTableExplicitSchema(projectID, datasetID, tableID string) error {
+func createTableExplicitSchema(projectID, datasetID string) error {
 	// projectID := "my-project-id"
 	// datasetID := "mydatasetid"
 	// tableID := "mytableid"
@@ -195,9 +285,12 @@ func createTableExplicitSchema(projectID, datasetID, tableID string) error {
 	}
 	defer client.Close()
 
+	tableID := "job-status"
+
 	sampleSchema := bigquery.Schema{
-		{Name: "full_name", Type: bigquery.StringFieldType},
-		{Name: "age", Type: bigquery.IntegerFieldType},
+		{Name: "job_name", Type: bigquery.StringFieldType},
+		{Name: "job_status", Type: bigquery.StringFieldType},
+		{Name: "message", Type: bigquery.StringFieldType},
 	}
 
 	metaData := &bigquery.TableMetadata{
@@ -209,5 +302,26 @@ func createTableExplicitSchema(projectID, datasetID, tableID string) error {
 		return err
 	}
 	fmt.Printf("Created table %v under dataset %v\n", tableID, datasetID)
+
+	tableID = "job-result"
+
+	sampleSchema = bigquery.Schema{
+		{Name: "job_name", Type: bigquery.StringFieldType},
+		{Name: "instance_name", Type: bigquery.StringFieldType},
+		{Name: "os_version", Type: bigquery.StringFieldType},
+		{Name: "result", Type: bigquery.StringFieldType},
+		{Name: "message", Type: bigquery.StringFieldType},
+	}
+
+	metaData = &bigquery.TableMetadata{
+		Schema: sampleSchema,
+		// ExpirationTime: time.Now().AddDate(1, 0, 0), // Table will be automatically deleted in 1 year.
+	}
+	tableRef = client.Dataset(datasetID).Table(tableID)
+	if err := tableRef.Create(ctx, metaData); err != nil {
+		return err
+	}
+	fmt.Printf("Created table %v under dataset %v\n", tableID, datasetID)
+
 	return nil
 }
