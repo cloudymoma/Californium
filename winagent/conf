@@ -1,4 +1,4 @@
-mongodb-on-gke
-testjob
-Evony.exe /VERYSILENT /LOG=C:\patch.log
+<project-id>
+<test-job-name>
+<win-app> /VERYSILENT /LOG=C:\patch.log
 C:\patch.log
