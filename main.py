@@ -113,7 +113,7 @@ def instance_status_check(image_list, project_id, zone):
 def job_create(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://～/pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///home/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
@@ -140,7 +140,7 @@ def job_create(program, job_name, project_id, region, zone):
 def job_delete(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://～/pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///home/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
