@@ -30,7 +30,7 @@ def job_status_init(job_name):
     client = bigquery.Client()
     insert = f"""
         INSERT INTO
-        `game_test.job_status` (job_name,
+        `gametest.job_status` (job_name,
             job_status,
             message)
         VALUES
@@ -43,7 +43,7 @@ def job_stauts_update(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job_status`
+    `gametest.job_status`
     SET
     job_status="on progress", message="test job is on progress"
     WHERE
@@ -57,7 +57,7 @@ def job_status_check(job_name):
     SELECT
     *
     FROM
-    `game_test.job_status`
+    `gametest.job_status`
     WHERE
     job_name = '{job_name}'""".format(job_name=job_name)
     query_results = client.query(update)
@@ -71,7 +71,7 @@ def job_result_check(job_name):
     SELECT
     *
     FROM
-    `game_test.job_result`
+    `gametest.job_result`
     WHERE
     job_name='{job_name}'""".format(job_name=job_name)
     query_results = client.query(query)
@@ -83,7 +83,7 @@ def job_status_delete(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job_status`
+    `gametest.job_status`
     SET
     job_status="deleted", message="test job has been deleted"
     WHERE
