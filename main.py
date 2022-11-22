@@ -221,10 +221,6 @@ async def post_handle(req: job_conf):
                     "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\\bucketname".format(gcs_bucket=gcs_bucket),
                     "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
                 },
-                service_account=compute.InstanceServiceAccountArgs(
-                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
-                    scopes=["cloud-platform"],
-                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
@@ -270,10 +266,6 @@ async def delete_handle(req: job_conf):
                     "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\bucketname".format(gcs_bucket=gcs_bucket),
                     "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
                 },
-                service_account=compute.InstanceServiceAccountArgs(
-                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
-                    scopes=["cloud-platform"],
-                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
