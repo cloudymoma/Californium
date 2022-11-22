@@ -1,0 +1,10 @@
+{
+  "bucketname": "cliu201-democli-xvlb",
+  "datasetid": "gametest",
+  "instancename": "democli",
+  "machinetype": "n1-standard-1",
+  "networkname": "global/networks/default",
+  "projectid": "cliu201",
+  "sourceimage": "projects/debian-cloud/global/images/family/debian-11",
+  "zone": "us-central1-a"
+}
