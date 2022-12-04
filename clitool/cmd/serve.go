@@ -142,6 +142,7 @@ apt install python3-pip -y
 curl -fsSL https://get.pulumi.com | sh
 cp -R .pulumi/bin/* /usr/local/bin/
 mkdir /home/pulumidemobackend
+chmod +777 -R /home/pulumidemobackend
 cat <<EOF > requirements.txt
 fastapi==0.82.0
 google-api-core==2.10.0
