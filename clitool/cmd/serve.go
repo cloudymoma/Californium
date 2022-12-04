@@ -84,6 +84,12 @@ to quickly create a Cobra application.`,
 			fmt.Printf("Unable to save config: %v\n", err)
 			os.Exit(1)
 		}
+
+		err = createFirewallRule(projectID, firewallRuleName, networkName)
+		if err != nil {
+			fmt.Printf("Unable to create firewall rule: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -323,6 +329,60 @@ func createTableExplicitSchema(projectID, datasetID string) error {
 		return err
 	}
 	fmt.Printf("Created table %v under dataset %v\n", tableID, datasetID)
+
+	return nil
+}
+
+// createFirewallRule creates a firewall rule allowing for incoming HTTP:8080 access from the entire Internet.
+func createFirewallRule(projectID, firewallRuleName, networkName string) error {
+	// projectID := "your_project_id"
+	// firewallRuleName := "europe-central2-b"
+	// networkName := "global/networks/default"
+
+	ctx := context.Background()
+	firewallsClient, err := compute.NewFirewallsRESTClient(ctx)
+	if err != nil {
+		return fmt.Errorf("NewInstancesRESTClient: %v", err)
+	}
+	defer firewallsClient.Close()
+
+	firewallRule := &computepb.Firewall{
+		Allowed: []*computepb.Allowed{
+			{
+				IPProtocol: proto.String("tcp"),
+				Ports:      []string{"8080"},
+			},
+		},
+		Direction:   proto.String(computepb.Firewall_INGRESS.String()),
+		Name:        &firewallRuleName,
+		TargetTags:  []string{},
+		Network:     &networkName,
+		Description: proto.String("Allowing TCP traffic on port 80 and 443 from Internet."),
+	}
+
+	// Note that the default value of priority for the firewall API is 1000.
+	// If you check the value of `firewallRule.GetPriority()` at this point it
+	// will be equal to 0, however it is not treated as "set" by the library and thus
+	// the default will be applied to the new rule. If you want to create a rule that
+	// has priority == 0, you need to explicitly set it so:
+
+	// firewallRule.Priority = proto.Int32(0)
+
+	req := &computepb.InsertFirewallRequest{
+		Project:          projectID,
+		FirewallResource: firewallRule,
+	}
+
+	op, err := firewallsClient.Insert(ctx, req)
+	if err != nil {
+		return fmt.Errorf("unable to create firewall rule: %v", err)
+	}
+
+	if err = op.Wait(ctx); err != nil {
+		return fmt.Errorf("unable to wait for the operation: %v", err)
+	}
+
+	fmt.Println("Firewall rule created")
 
 	return nil
 }

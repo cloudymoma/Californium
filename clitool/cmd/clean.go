@@ -57,6 +57,11 @@ to quickly create a Cobra application.`,
 			fmt.Printf("Unable to delete dataset: %v\n", err)
 			os.Exit(1)
 		}
+		err = deleteFirewallRule(projectID, firewallRuleName)
+		if err != nil {
+			fmt.Printf("Unable to delete firewall rule: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -144,5 +149,36 @@ func deleteDataset(projectID, datasetID string) error {
 		return fmt.Errorf("delete: %v", err)
 	}
 	fmt.Printf("Dataset %v deleted\n", datasetID)
+	return nil
+}
+
+// deleteFirewallRule deletes a firewall rule from the project.
+func deleteFirewallRule(projectID, firewallRuleName string) error {
+	// projectID := "your_project_id"
+	// firewallRuleName := "europe-central2-b"
+
+	ctx := context.Background()
+	firewallsClient, err := compute.NewFirewallsRESTClient(ctx)
+	if err != nil {
+		return fmt.Errorf("NewInstancesRESTClient: %v", err)
+	}
+	defer firewallsClient.Close()
+
+	req := &computepb.DeleteFirewallRequest{
+		Project:  projectID,
+		Firewall: firewallRuleName,
+	}
+
+	op, err := firewallsClient.Delete(ctx, req)
+	if err != nil {
+		return fmt.Errorf("unable to delete firewall rule: %v", err)
+	}
+
+	if err = op.Wait(ctx); err != nil {
+		return fmt.Errorf("unable to wait for the operation: %v", err)
+	}
+
+	fmt.Println("Firewall rule deleted")
+
 	return nil
 }

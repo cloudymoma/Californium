@@ -16,16 +16,17 @@ var cfgFile string
 var jobFile string
 
 var (
-	projectID    string
-	zone         string
-	instanceName string
-	machineType  string
-	sourceImage  string
-	networkName  string
-	bucketName   string
-	datasetID    string
-	serverIP     string
-	serverPort   string
+	projectID        string
+	zone             string
+	instanceName     string
+	machineType      string
+	sourceImage      string
+	networkName      string
+	bucketName       string
+	datasetID        string
+	serverIP         string
+	serverPort       string
+	firewallRuleName string
 	// tableID      string
 )
 
@@ -69,6 +70,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&machineType, "machinetype", "m", "n1-standard-1", "config gce instance machine type (default is n1-standard-1, available machine type list https://cloud.google.com/compute/docs/general-purpose-machines)")
 	rootCmd.PersistentFlags().StringVarP(&sourceImage, "sourceimage", "s", "projects/debian-cloud/global/images/family/debian-11", "config gce instance image (default is projects/debian-cloud/global/images/family/debian-11)")
 	rootCmd.PersistentFlags().StringVarP(&networkName, "networkname", "n", "global/networks/default", "config gce network (default is global/networks/default)")
+	rootCmd.PersistentFlags().StringVarP(&firewallRuleName, "firewallrulename", "f", "allow-californium-8080", "config the californium server port permit firewall rule")
 	rootCmd.PersistentFlags().StringVarP(&bucketName, "bucketName", "b", "gametest", "config gcs backetname")
 	rootCmd.PersistentFlags().StringVarP(&datasetID, "datasetid", "d", "gametest", "config bigquery dataset name")
 	rootCmd.PersistentFlags().StringVarP(&serverIP, "serverip", "a", "127.0.0.1", "config backend server ip address")
@@ -83,6 +85,7 @@ func init() {
 	viper.BindPFlag("networkname", rootCmd.PersistentFlags().Lookup("networkname"))
 	viper.BindPFlag("bucketName", rootCmd.PersistentFlags().Lookup("bucketName"))
 	viper.BindPFlag("datasetid", rootCmd.PersistentFlags().Lookup("datasetid"))
+	viper.BindPFlag("firewallrulename", rootCmd.PersistentFlags().Lookup("firewallrulename"))
 	// viper.BindPFlag("tableid", rootCmd.PersistentFlags().Lookup("tableid"))
 }
 
