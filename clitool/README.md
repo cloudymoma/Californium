@@ -82,7 +82,7 @@ Note: if user install the client tool outside the backend server, please set the
 ### Delete Job Result
 
 ```
-./californiumcli job result --config ".cobra.json" --jobconfig "job.json"
+./californiumcli job delete --config ".cobra.json" --jobconfig "job.json"
 ```
 Note: if user install the client tool outside the backend server, please set the -a (backenserver ip) and -l (backend server port) accordingly 
 
