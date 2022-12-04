@@ -72,7 +72,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&bucketName, "bucketName", "b", "gametest", "config gcs backetname")
 	rootCmd.PersistentFlags().StringVarP(&datasetID, "datasetid", "d", "gametest", "config bigquery dataset name")
 	rootCmd.PersistentFlags().StringVarP(&serverIP, "serverip", "a", "127.0.0.1", "config backend server ip address")
-	rootCmd.PersistentFlags().StringVarP(&serverPort, "serverport", "l", "3333", "config backend server listen port")
+	rootCmd.PersistentFlags().StringVarP(&serverPort, "serverport", "l", "8080", "config backend server listen port")
 	rootCmd.PersistentFlags().StringVarP(&jobFile, "jobconfig", "j", "job.json", "config job config file path")
 	// rootCmd.PersistentFlags().StringVarP(&tableID, "tableid", "t", "", "config bigquery table name")
 	viper.BindPFlag("projectid", rootCmd.PersistentFlags().Lookup("projectid"))
