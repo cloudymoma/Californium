@@ -1,4 +1,7 @@
 {
     "job_name": "demo",
-    "os_list": {"win7": "win7"}
+    "os_list": {"win7": "win7"},
+    "cmd": "democmd",
+    "app_name": "demoappname",
+    "app_file_name": "demoappfilename"
 }

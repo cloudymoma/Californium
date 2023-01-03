@@ -48,6 +48,9 @@ to quickly create a Cobra application.`,
 			Region:        "",
 			Zone:          "",
 			Os_list:       osList{Win7: "", Win8: "", Win10: "", Win11: ""},
+			Cmd:           "",
+			App_name:      "",
+			App_file_name: "",
 		}
 		// we unmarshal our byteArray which contains our
 		// jsonFile's content into 'users' which we defined above

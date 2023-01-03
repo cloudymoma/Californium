@@ -5,8 +5,10 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"strings"
@@ -254,6 +256,23 @@ func createBucketClassLocation(projectID, bucketName string) error {
 		return fmt.Errorf("Bucket(%q).Create: %v", bucketName, err)
 	}
 	fmt.Printf("Created bucket %v in %v with storage class %v\n", bucketName, storageClassAndLocation.Location, storageClassAndLocation.StorageClass)
+
+	// Upload an object with storage.Writer.
+	object := "app_file/"
+	b := []byte("")
+	buf := bytes.NewBuffer(b)
+	wc := client.Bucket(bucketName).Object(object).NewWriter(ctx)
+	wc.ChunkSize = 0 // note retries are not supported for chunk size 0.
+
+	if _, err = io.Copy(wc, buf); err != nil {
+		return fmt.Errorf("io.Copy: %v", err)
+	}
+	// Data can continue to be added to the file until the writer is closed.
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %v", err)
+	}
+	fmt.Printf("%v uploaded to %v.\n", object, bucketName)
+
 	return nil
 }
 
@@ -314,8 +333,9 @@ func createTableExplicitSchema(projectID, datasetID string) error {
 
 	sampleSchema = bigquery.Schema{
 		{Name: "job_name", Type: bigquery.StringFieldType},
-		{Name: "instance_name", Type: bigquery.StringFieldType},
+		{Name: "hostname", Type: bigquery.StringFieldType},
 		{Name: "os_version", Type: bigquery.StringFieldType},
+		{Name: "status", Type: bigquery.StringFieldType},
 		{Name: "result", Type: bigquery.StringFieldType},
 		{Name: "message", Type: bigquery.StringFieldType},
 	}

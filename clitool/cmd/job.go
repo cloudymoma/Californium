@@ -24,6 +24,9 @@ type jobConfig struct {
 	Vpc_network   string `json:"vpc_network"`
 	Gcp_bucket    string `json:"gcp_bucket"`
 	Os_list       osList `json:"os_list"`
+	Cmd           string `json:"cmd"`
+	App_name      string `json:"app_name"`
+	App_file_name string `json:"app_file_name"`
 }
 
 // jobCmd represents the job command

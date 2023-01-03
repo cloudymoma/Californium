@@ -1,6 +1,7 @@
 {
   "bucketname": "democli",
   "datasetid": "gametest",
+  "firewallrulename": "allow-californium-8080",
   "instancename": "democli",
   "machinetype": "n1-standard-1",
   "networkname": "global/networks/default",

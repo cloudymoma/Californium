@@ -126,7 +126,9 @@ func deleteBucket(bucketName string) error {
 
 	bucket := client.Bucket(bucketName)
 	if err := bucket.Delete(ctx); err != nil {
-		return fmt.Errorf("Bucket(%q).Delete: %v", bucketName, err)
+		// return fmt.Errorf("Bucket(%q).Delete: %v", bucketName, err)
+		fmt.Printf("Bucket %v has content, please delete from UI.\n", bucketName)
+		return nil
 	}
 	fmt.Printf("Bucket %v deleted\n", bucketName)
 	return nil
