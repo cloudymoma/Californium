@@ -18,6 +18,8 @@ from pulumi_gcp import compute
 from google.cloud import compute_v1
 from google.cloud import bigquery
 
+from dep_files import *
+
 
 image_list_origin = {
     "win7": "windows-cloud/windows-server-2016-dc-v20220902",
@@ -30,7 +32,7 @@ def job_status_init(job_name):
     client = bigquery.Client()
     insert = f"""
         INSERT INTO
-        `game_test.job_status` (job_name,
+        `gametest.job-status` (job_name,
             job_status,
             message)
         VALUES
@@ -43,7 +45,7 @@ def job_stauts_update(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job_status`
+    `gametest.job-status`
     SET
     job_status="on progress", message="test job is on progress"
     WHERE
@@ -57,7 +59,7 @@ def job_status_check(job_name):
     SELECT
     *
     FROM
-    `game_test.job_status`
+    `gametest.job-status`
     WHERE
     job_name = '{job_name}'""".format(job_name=job_name)
     query_results = client.query(update)
@@ -71,7 +73,7 @@ def job_result_check(job_name):
     SELECT
     *
     FROM
-    `game_test.job_result`
+    `gametest.job_result`
     WHERE
     job_name='{job_name}'""".format(job_name=job_name)
     query_results = client.query(query)
@@ -83,7 +85,7 @@ def job_status_delete(job_name):
     client = bigquery.Client()
     update = f"""
     UPDATE
-    `game_test.job_status`
+    `gametest.job-status`
     SET
     job_status="deleted", message="test job has been deleted"
     WHERE
@@ -113,7 +115,7 @@ def instance_status_check(image_list, project_id, zone):
 def job_create(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://～/pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///home/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
@@ -140,7 +142,7 @@ def job_create(program, job_name, project_id, region, zone):
 def job_delete(program, job_name, project_id, region, zone):
     project_name = job_name
     os.environ["PULUMI_CONFIG_PASSPHRASE"] = ""
-    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file://～/pulumidemobackend"))
+    project_setting = auto.ProjectSettings(name=project_name, runtime="python", backend=auto.ProjectBackend(url="file:///home/pulumidemobackend"))
     stack_setting = {
     "prd": auto.StackSettings(secrets_provider="default")
     }
@@ -199,11 +201,13 @@ async def post_handle(req: job_conf):
     instance_type = req.instance_type
     vpc_network = req.vpc_network
     gcs_bucket = req.gcs_bucket
+    app_name = "myapp"
     image_list_final = {}
+    all_files_upload(project_id=project_id, job_name=job_name, temp_dir="temp", bucket_name=gcs_bucket, app_name=app_name, cmd="Evony.exe /VERYSILENT /LOG=C:\patch.log")
+
     for image_key in os_list:
         if os_list[image_key] is not None:
             image_list_final[image_key] = image_list_origin[image_key]
-
 
     def gcp_resource(image_list=image_list_final):
         for image_key in image_list: 
@@ -218,17 +222,15 @@ async def post_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\\bucketname".format(gcs_bucket=gcs_bucket),
-                    "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
+                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name),
                 },
-                service_account=compute.InstanceServiceAccountArgs(
-                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
-                    scopes=["cloud-platform"],
-                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
-                )])
+                )],
+                service_account=compute.InstanceServiceAccountArgs(
+                    scopes=["cloud-platform"],
+                ))
             pulumi.export(f'instance-{image_key}_status'.format(image_key),  instance_dic[image_key].current_status)
     job_status_init(job_name=job_name)
     job_create(program=gcp_resource, job_name=job_name, project_id=project_id, region=region, zone=zone)
@@ -247,6 +249,7 @@ async def delete_handle(req: job_conf):
     instance_type = req.instance_type
     vpc_network = req.vpc_network
     gcs_bucket = req.gcs_bucket
+    app_name = "myapp"
     image_list_final = {}
     for image_key in os_list:
         if os_list[image_key] is not None:
@@ -267,17 +270,15 @@ async def delete_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-cmd": f"echo {gcs_bucket}>C:\bucketname".format(gcs_bucket=gcs_bucket),
-                    "windows-startup-script-url": f"gs://{gcs_bucket}/inst-py.bat".format(gcs_bucket=gcs_bucket),
+                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name),
                 },
-                service_account=compute.InstanceServiceAccountArgs(
-                    email="baremetal-server@mongodb-on-gke.iam.gserviceaccount.com",
-                    scopes=["cloud-platform"],
-                ),
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
                     access_configs=[compute.InstanceNetworkInterfaceAccessConfigArgs()],
-                )])
+                )],
+                service_account=compute.InstanceServiceAccountArgs(
+                    scopes=["cloud-platform"],
+                ))
             pulumi.export(f'instance-{image_key}_status'.format(image_key),  instance_dic[image_key].current_status)
     
     job_delete(program=gcp_resource, job_name=job_name, project_id=project_id, region=region, zone=zone)
