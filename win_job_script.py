@@ -36,7 +36,7 @@ fd_bucketname = open('win_bucket_conf.txt', 'r')
 bucketname = fd_bucketname.readline().strip()
 
 dataset = "gametest"
-table = "job_result"
+table = "job-result"
 table_id = project_id + "." + dataset + "." + table
 
 hostname = socket.gethostname()
