@@ -1,4 +1,0 @@
-backend: !!python/object:pulumi.automation._project_settings.ProjectBackend
-  url: file:///home/pulumidemobackend
-name: demo
-runtime: python
