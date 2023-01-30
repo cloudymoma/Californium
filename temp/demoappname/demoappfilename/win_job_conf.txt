@@ -1,0 +1,4 @@
+mongodb-on-gke
+demo
+Evony.exe /VERYSILENT /LOG=patch.log
+patch.log

@@ -180,8 +180,10 @@ class job_conf(BaseModel):
     zone: str = None 
     instance_type: str = None
     vpc_network: str = None
-    gcs_bucket: str = None
-
+    gcp_bucket: str = None
+    app_name: str = None
+    app_file_name: str = None
+    cmd: str = None
 
 app = FastAPI()
 
@@ -200,10 +202,12 @@ async def post_handle(req: job_conf):
     zone = req.zone
     instance_type = req.instance_type
     vpc_network = req.vpc_network
-    gcs_bucket = req.gcs_bucket
-    app_name = "myapp"
+    gcs_bucket = req.gcp_bucket
+    app_name = req.app_name
+    app_file_name = req.app_file_name
+    cmd = req.cmd
     image_list_final = {}
-    all_files_upload(project_id=project_id, job_name=job_name, temp_dir="temp", bucket_name=gcs_bucket, app_name=app_name, cmd="Evony.exe /VERYSILENT /LOG=C:\patch.log")
+    all_files_upload(project_id=project_id, job_name=job_name, temp_dir="temp", bucket_name=gcs_bucket, app_name=app_name, app_file_name=app_file_name, cmd=cmd)
 
     for image_key in os_list:
         if os_list[image_key] is not None:
@@ -222,7 +226,7 @@ async def post_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name),
+                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/{app_file_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name, app_file_name=app_file_name),
                 },
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,
@@ -248,7 +252,7 @@ async def delete_handle(req: job_conf):
     zone = req.zone
     instance_type = req.instance_type
     vpc_network = req.vpc_network
-    gcs_bucket = req.gcs_bucket
+    gcs_bucket = req.gcp_bucket
     app_name = "myapp"
     image_list_final = {}
     for image_key in os_list:
@@ -270,7 +274,7 @@ async def delete_handle(req: job_conf):
                     ),
                 ),
                 metadata={
-                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name),
+                    "sysprep-specialize-script-url": f"gs://{gcs_bucket}/{app_name}/{app_file_name}/win_start_script.bat".format(gcs_bucket=gcs_bucket, app_name=app_name, app_file_name=app_file_name),
                 },
                 network_interfaces=[compute.InstanceNetworkInterfaceArgs(
                     network=vpc_network,

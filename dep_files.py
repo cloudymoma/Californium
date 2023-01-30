@@ -21,7 +21,7 @@ def win_start_script(temp_dir, bucket_name, app_name, app_file_name):
     print("saving windows start up script")
     win_start_script = """echo "Downloading files from gcs" > C:\inst-batlog
 call gsutil -m cp -r gs://{bucket_name}/{app_name}/{app_file_name} C:\\
-cd C:\{app_name}
+cd C:\{app_file_name}
 echo "Installing Python 3.10.7" >> C:\inst-batlog
 python.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 echo "Successfully installed python" >> C:\inst-batlog
@@ -43,12 +43,12 @@ def win_bucket_conf(temp_dir, app_name, bucket_name, app_file_name):
     f.write(win_bucke_conf)
 
 
-def win_job_conf(project_id, job_name, cmd, temp_dir, app_name):
+def win_job_conf(project_id, job_name, cmd, temp_dir, app_name, app_file_name):
     print("saving bucket configuration file")
     win_job_conf = f"""{project_id}
 {job_name}
 {cmd}
-C:\patch.log"""
+patch.log"""
     print(win_job_conf)
     with open(f"{temp_dir}/{app_name}/{app_file_name}/win_job_conf.txt", "w") as f:
       f.write(win_job_conf)
@@ -56,7 +56,7 @@ C:\patch.log"""
 
 def win_job_script(temp_dir, app_name, app_file_name):
     print("saving win job python script")
-    src_file = os.path.expanduser('~') + "/win_job_script.py"
+    src_file = os.path.expanduser('~') + "/Californium/win_job_script.py"
     dest_file = f"{temp_dir}/{app_name}/{app_file_name}/win_job_script.py"
     shutil.copy(src_file, dest_file)
 

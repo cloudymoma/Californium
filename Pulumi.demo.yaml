@@ -1,0 +1,5 @@
+encryptionsalt: v1:ZQbHlLCOkCc=:v1:SegvuZU23M2PrPZs:q9jMf9Es97lCLVsI9fQaKzi1YaIpLw==
+config:
+  gcp:project: mongodb-on-gke
+  gcp:region: us-central1
+  gcp:zone: us-central1-a
